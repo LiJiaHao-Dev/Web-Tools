@@ -3,286 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GitHub 全数据透视</title>
+    <title>GitHub 极客透视</title>
     <style>
-        :root {
-            --bg-root: #0d1117;
-            --bg-card: #161b22;
-            --bg-hover: #21262d;
-            --border: #30363d;
-            --text-main: #c9d1d9;
-            --text-sub: #8b949e;
-            --accent: #58a6ff;
-            --green: #238636;
-            --red: #da3633;
-            --purple: #a371f7;
-        }
-
+        :root { --bg-root: #0d1117; --bg-card: #161b22; --border: #30363d; --text-main: #c9d1d9; --text-sub: #8b949e; --accent: #58a6ff; --green: #238636; --red: #da3633; --purple: #a371f7; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: -apple-system, "Noto Sans SC", "Microsoft YaHei", sans-serif;
-            background-color: var(--bg-root);
-            color: var(--text-main);
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-        }
-
-        .container { width: 100%; max-width: 460px; }
-
-        /* --- 搜索栏 (吸顶) --- */
-        .search-container {
-            position: sticky; top: 0; z-index: 100;
-            background: rgba(13, 17, 23, 0.95);
-            backdrop-filter: blur(12px);
-            padding-bottom: 15px;
-            border-bottom: 1px solid transparent;
-            transition: 0.3s;
-        }
-        .search-container.scrolled { border-bottom-color: var(--border); }
-
-        .search-box { display: flex; gap: 10px; margin-top: 10px; }
-        input {
-            flex: 1; background: var(--bg-root); border: 1px solid var(--border);
-            border-radius: 6px; padding: 10px 12px; color: var(--text-main);
-            font-size: 15px; outline: none; transition: 0.2s;
-        }
-        input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(88,166,255,0.1); }
-        
-        /* --- 首页状态 --- */
-        .dashboard { text-align: center; padding-top: 40px; animation: fadeIn 0.4s; }
-        .logo-area svg { fill: var(--text-main); width: 60px; height: 60px; opacity: 0.8; margin-bottom: 15px; }
-        .hint { color: var(--text-sub); font-size: 14px; margin-bottom: 30px; }
-        
-        .tag-cloud { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-        .tag {
-            background: var(--bg-card); border: 1px solid var(--border); color: var(--accent);
-            padding: 5px 12px; border-radius: 100px; font-size: 12px; cursor: pointer;
-        }
-
-        /* --- 结果面板 --- */
-        .result-panel { display: none; animation: slideUp 0.3s; padding-bottom: 40px; }
-        
-        /* 1. 核心身份卡 */
-        .profile-header {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 8px; padding: 20px; text-align: center; position: relative; margin-bottom: 12px;
-        }
-        .avatar { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--bg-root); margin-bottom: 10px; }
-        .name { font-size: 20px; font-weight: 700; margin-bottom: 2px; }
-        .login { color: var(--text-sub); font-family: monospace; font-size: 14px; }
-        .badges { margin-top: 10px; display: flex; justify-content: center; gap: 6px; }
-        .badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid; }
-        .b-admin { color: var(--red); border-color: var(--red); }
-        .b-hire { color: var(--green); border-color: var(--green); }
-        .b-type { color: var(--purple); border-color: var(--purple); }
-
-        /* 2. 数据矩阵 */
-        .data-matrix {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;
-        }
-        .matrix-item {
-            background: var(--bg-card); border: 1px solid var(--border);
-            padding: 12px; border-radius: 8px;
-        }
-        .m-label { font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px; }
-        .m-value { font-size: 15px; color: var(--text-main); font-weight: 600; word-break: break-all; }
-        .m-value.link { color: var(--accent); text-decoration: none; }
-
-        /* 3. 全量数据列表 */
-        .full-list {
-            background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
-            overflow: hidden;
-        }
-        .list-row {
-            display: flex; justify-content: space-between; padding: 12px 15px;
-            border-bottom: 1px solid var(--border); font-size: 13px;
-        }
+        body { font-family: -apple-system, sans-serif; background: var(--bg-root); color: var(--text-main); padding: 20px; display: flex; justify-content: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 440px; }
+        .search-box { display: flex; gap: 10px; margin-bottom: 20px; position: sticky; top: 0; background: rgba(13,17,23,0.95); padding: 10px 0; z-index: 10; backdrop-filter: blur(10px); }
+        input { flex: 1; background: var(--bg-root); border: 1px solid var(--border); border-radius: 6px; padding: 10px; color: var(--text-main); outline: none; }
+        input:focus { border-color: var(--accent); }
+        .dashboard { text-align: center; padding-top: 40px; }
+        .tag { background: var(--bg-card); border: 1px solid var(--border); color: var(--accent); padding: 5px 12px; border-radius: 20px; margin: 5px; display: inline-block; cursor: pointer; }
+        .profile-header { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 12px; }
+        .avatar { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--bg-root); }
+        .name { font-size: 20px; font-weight: 700; margin: 10px 0 5px; }
+        .login { color: var(--text-sub); font-family: monospace; }
+        .badges { margin-top: 10px; display: flex; justify-content: center; gap: 5px; }
+        .badge { font-size: 10px; padding: 2px 6px; border: 1px solid; border-radius: 4px; }
+        .data-matrix { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .matrix-item { background: var(--bg-card); border: 1px solid var(--border); padding: 12px; border-radius: 8px; }
+        .m-label { font-size: 11px; color: var(--text-sub); display: block; }
+        .m-value { font-size: 15px; font-weight: 600; }
+        .full-list { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .list-row { display: flex; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid var(--border); font-size: 13px; }
         .list-row:last-child { border-bottom: none; }
-        .k { color: var(--text-sub); }
-        .v { color: var(--text-main); text-align: right; max-width: 60%; font-family: monospace; }
-
-        /* 动画 */
-        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-        @keyframes slideUp { from{transform:translateY(10px);opacity:0} to{transform:translateY(0);opacity:1} }
-        
-        .loading { text-align: center; color: var(--text-sub); padding: 20px; display: none; }
-        .error-msg { color: var(--red); text-align: center; margin-top: 10px; display: none; }
+        .v { text-align: right; max-width: 70%; word-break: break-all; color: var(--text-main); }
+        .v a { color: var(--accent); text-decoration: none; }
+        .result-panel { display: none; }
     </style>
 </head>
 <body>
-
 <div class="container">
-    <!-- 搜索区 -->
-    <div class="search-container" id="searchHeader">
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="输入 GitHub ID 自动查询..." autocomplete="off">
-        </div>
-        <p class="error-msg" id="errorMsg">未找到该用户，请检查 ID</p>
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="GitHub ID..." autocomplete="off">
     </div>
-
-    <!-- 状态：加载中 -->
-    <div class="loading" id="loading">正在从 GitHub 获取全量数据...</div>
-
-    <!-- 状态1：仪表盘首页 -->
-    <div class="dashboard" id="dashboard">
-        <div class="logo-area">
-            <svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-            <h2>GitHub 全数据透视</h2>
-        </div>
-        <p class="hint">输入 ID 后回车，查看 30+ 项隐藏数据</p>
-        <div class="tag-cloud">
+    <div id="dashboard" class="dashboard">
+        <div style="margin-bottom:20px"><svg width="50" height="50" viewBox="0 0 16 16" fill="#c9d1d9"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg></div>
+        <p style="color:#8b949e;margin-bottom:20px">输入 ID 回车，自动隐藏空数据</p>
+        <div>
             <span class="tag" onclick="quick('LiJiaHao-Dev')">我的账号</span>
-            <span class="tag" onclick="quick('torvalds')">Linux 之父</span>
-            <span class="tag" onclick="quick('microsoft')">微软官方</span>
+            <span class="tag" onclick="quick('torvalds')">Linus</span>
         </div>
     </div>
-
-    <!-- 状态2：结果面板 -->
-    <div class="result-panel" id="result">
-        <!-- 头部 -->
+    <div id="result" class="result-panel">
         <div class="profile-header">
-            <img src="" class="avatar" id="p-avatar">
-            <div class="name" id="p-name"></div>
-            <div class="login" id="p-login"></div>
-            <div class="badges" id="p-badges"></div>
-            <p style="margin-top:10px; font-size:14px; line-height:1.5" id="p-bio"></p>
+            <img src="" id="avatar" class="avatar">
+            <div id="name" class="name"></div>
+            <div id="login" class="login"></div>
+            <div id="badges" class="badges"></div>
+            <p id="bio" style="margin-top:10px;font-size:14px;line-height:1.5"></p>
         </div>
-
-        <!-- 关键指标 -->
         <div class="data-matrix">
-            <div class="matrix-item"><span class="m-label">公开仓库</span><span class="m-value" id="d-repos"></span></div>
-            <div class="matrix-item"><span class="m-label">粉丝 (Followers)</span><span class="m-value" id="d-followers"></span></div>
-            <div class="matrix-item"><span class="m-label">关注 (Following)</span><span class="m-value" id="d-following"></span></div>
-            <div class="matrix-item"><span class="m-label">代码片段 (Gists)</span><span class="m-value" id="d-gists"></span></div>
+            <div class="matrix-item"><span class="m-label">仓库</span><span class="m-value" id="repos"></span></div>
+            <div class="matrix-item"><span class="m-label">粉丝</span><span class="m-value" id="followers"></span></div>
+            <div class="matrix-item"><span class="m-label">关注</span><span class="m-value" id="following"></span></div>
+            <div class="matrix-item"><span class="m-label">Gists</span><span class="m-value" id="gists"></span></div>
         </div>
-
-        <!-- 全量详细列表 -->
-        <div class="full-list" id="fullList">
-            <!-- JS 自动填充这里 -->
-        </div>
+        <div id="fullList" class="full-list"></div>
     </div>
 </div>
-
 <script>
-    const searchInput = document.getElementById('searchInput');
-    const dashboard = document.getElementById('dashboard');
-    const resultPanel = document.getElementById('result');
-    const loading = document.getElementById('loading');
-    const errorMsg = document.getElementById('errorMsg');
-    const fullList = document.getElementById('fullList');
-
-    // --- 1. 核心逻辑：监听输入变动 (自动归位) ---
-    searchInput.addEventListener('input', (e) => {
-        const val = e.target.value.trim();
-        if (val === "") {
-            // 内容被删除，立即归位
-            showDashboard();
-        }
-    });
-
-    // 回车搜索
-    searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') executeSearch(searchInput.value.trim());
-    });
-
-    function quick(name) {
-        searchInput.value = name;
-        executeSearch(name);
-    }
-
-    function showDashboard() {
-        resultPanel.style.display = 'none';
-        loading.style.display = 'none';
-        errorMsg.style.display = 'none';
-        dashboard.style.display = 'block';
-    }
-
-    // --- 2. 数据获取与处理 ---
-    async function executeSearch(username) {
-        if (!username) return;
-
-        dashboard.style.display = 'none';
-        resultPanel.style.display = 'none';
-        loading.style.display = 'block';
-        errorMsg.style.display = 'none';
-
+    const input = document.getElementById('searchInput');
+    input.addEventListener('input', e => { if(!e.target.value.trim()) showDash(); });
+    input.addEventListener('keypress', e => { if(e.key === 'Enter') search(input.value.trim()); });
+    function quick(n) { input.value=n; search(n); }
+    function showDash() { document.getElementById('result').style.display='none'; document.getElementById('dashboard').style.display='block'; }
+    
+    async function search(user) {
+        if(!user) return;
         try {
-            const res = await fetch(`https://api.github.com/users/${username}`);
-            if (!res.ok) throw new Error("404");
+            const res = await fetch(`https://api.github.com/users/${user}`);
+            if(!res.ok) throw new Error();
             const data = await res.json();
-            
-            renderData(data);
-            
-            loading.style.display = 'none';
-            resultPanel.style.display = 'block';
-        } catch (e) {
-            loading.style.display = 'none';
-            errorMsg.style.display = 'block';
-        }
+            render(data);
+            document.getElementById('dashboard').style.display='none';
+            document.getElementById('result').style.display='block';
+        } catch(e) { alert('未找到用户'); }
     }
 
-    // --- 3. 渲染全量数据 (中文化) ---
-    function renderData(data) {
-        // 头部信息
-        document.getElementById('p-avatar').src = data.avatar_url;
-        document.getElementById('p-name').innerText = data.name || "未设置昵称";
-        document.getElementById('p-login').innerText = `ID: ${data.id} | @${data.login}`;
-        document.getElementById('p-bio').innerText = data.bio || "该用户暂无个人简介";
+    function render(data) {
+        document.getElementById('avatar').src = data.avatar_url;
+        document.getElementById('name').innerText = data.name || data.login;
+        document.getElementById('login').innerText = `ID: ${data.id}`;
+        document.getElementById('bio').innerText = data.bio || "暂无简介";
+        document.getElementById('repos').innerText = data.public_repos;
+        document.getElementById('followers').innerText = data.followers;
+        document.getElementById('following').innerText = data.following;
+        document.getElementById('gists').innerText = data.public_gists;
 
-        // 徽章
-        const badges = document.getElementById('p-badges');
-        badges.innerHTML = `<span class="badge b-type">${data.type === 'User' ? '个人账号' : '组织账号'}</span>`;
-        if(data.site_admin) badges.innerHTML += `<span class="badge b-admin">GitHub 员工</span>`;
-        if(data.hireable) badges.innerHTML += `<span class="badge b-hire">可雇佣</span>`;
+        const badges = document.getElementById('badges');
+        badges.innerHTML = `<span class="badge" style="color:#a371f7;border-color:#a371f7">${data.type}</span>`;
+        if(data.site_admin) badges.innerHTML += `<span class="badge" style="color:#da3633;border-color:#da3633">STAFF</span>`;
 
-        // 核心指标
-        document.getElementById('d-repos').innerText = data.public_repos;
-        document.getElementById('d-followers').innerText = data.followers;
-        document.getElementById('d-following').innerText = data.following;
-        document.getElementById('d-gists').innerText = data.public_gists;
-
-        // 全量列表生成 (内置汉化映射)
         const map = [
-            { k: "公司/组织", v: data.company },
-            { k: "地理位置", v: data.location },
-            { k: "电子邮箱", v: data.email },
-            { k: "个人网站", v: data.blog, link: true },
-            { k: "Twitter", v: data.twitter_username },
-            { k: "注册时间", v: formatDate(data.created_at) },
-            { k: "最后更新", v: formatDate(data.updated_at) },
-            { k: "节点 ID", v: data.node_id },
-            { k: "Gravatar ID", v: data.gravatar_id || "无" },
-            { k: "主页链接", v: data.html_url, link: true },
-            { k: "API 链接", v: data.url, link: true }
+            {k:"公司", v:data.company}, {k:"位置", v:data.location}, {k:"邮箱", v:data.email},
+            {k:"网站", v:data.blog, l:true}, {k:"Twitter", v:data.twitter_username},
+            {k:"注册", v:new Date(data.created_at).toLocaleDateString()},
+            {k:"更新", v:new Date(data.updated_at).toLocaleString()},
+            {k:"节点", v:data.node_id}, {k:"主页", v:data.html_url, l:true}
         ];
 
-        fullList.innerHTML = map.map(item => {
-            let val = item.v;
-            if (!val) val = "未设置";
-            if (item.link && val !== "未设置") {
-                // 自动补全 http
-                let url = val.startsWith('http') ? val : 'http://' + val;
-                val = `<a href="${url}" target="_blank" style="color:#58a6ff;text-decoration:none">${item.v}</a>`;
-            }
-            return `
-                <div class="list-row">
-                    <span class="k">${item.k}</span>
-                    <span class="v">${val}</span>
-                </div>
-            `;
+        document.getElementById('fullList').innerHTML = map.filter(i => i.v).map(i => {
+            let val = i.v;
+            if(i.l) { let u = val.startsWith('http')?val:'http://'+val; val = `<a href="${u}" target="_blank">${val}</a>`; }
+            return `<div class="list-row"><span style="color:#8b949e">${i.k}</span><span class="v">${val}</span></div>`;
         }).join('');
     }
-
-    function formatDate(isoStr) {
-        if (!isoStr) return "未知";
-        const d = new Date(isoStr);
-        return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 ${d.getHours()}:${d.getMinutes()}`;
-    }
 </script>
-
 </body>
 </html>
-
