@@ -3,438 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GitHub Insight</title>
+    <title>GitHub 全数据透视</title>
     <style>
         :root {
-            --bg-canvas: #0d1117;
+            --bg-root: #0d1117;
             --bg-card: #161b22;
-            --bg-subtle: #21262d;
-            --border-default: #30363d;
-            --text-primary: #c9d1d9;
-            --text-secondary: #8b949e;
-            --accent-fg: #58a6ff;
-            --success-fg: #238636;
-            --danger-fg: #f85149;
-            --orange-fg: #d29922;
+            --bg-hover: #21262d;
+            --border: #30363d;
+            --text-main: #c9d1d9;
+            --text-sub: #8b949e;
+            --accent: #58a6ff;
+            --green: #238636;
+            --red: #da3633;
+            --purple: #a371f7;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            background-color: var(--bg-canvas);
-            color: var(--text-primary);
-            min-height: 100vh;
+            font-family: -apple-system, "Noto Sans SC", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-root);
+            color: var(--text-main);
+            padding: 20px;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 30px 20px;
-            /* 底部留白给语言栏 */
-            padding-bottom: 80px; 
+            justify-content: center;
+            min-height: 100vh;
         }
 
-        .container { width: 100%; max-width: 440px; position: relative; }
+        .container { width: 100%; max-width: 460px; }
 
-        /* --- 顶部搜索栏 --- */
-        .search-area {
-            position: sticky; top: 0; z-index: 10;
+        /* --- 搜索栏 (吸顶) --- */
+        .search-container {
+            position: sticky; top: 0; z-index: 100;
             background: rgba(13, 17, 23, 0.95);
-            backdrop-filter: blur(10px);
-            padding-bottom: 20px;
-            margin-bottom: 10px;
+            backdrop-filter: blur(12px);
+            padding-bottom: 15px;
+            border-bottom: 1px solid transparent;
+            transition: 0.3s;
         }
-        
-        .logo-area { text-align: center; margin-bottom: 20px; }
-        .logo-area svg { fill: var(--text-primary); width: 40px; height: 40px; opacity: 0.8; }
-        .logo-title { font-size: 18px; font-weight: 600; margin-top: 10px; letter-spacing: -0.5px; }
+        .search-container.scrolled { border-bottom-color: var(--border); }
 
-        .input-group { display: flex; gap: 10px; }
+        .search-box { display: flex; gap: 10px; margin-top: 10px; }
         input {
-            flex: 1; background: var(--bg-canvas); border: 1px solid var(--border-default);
-            border-radius: 8px; padding: 10px 14px; color: var(--text-primary); outline: none;
-            transition: 0.2s; font-size: 15px;
+            flex: 1; background: var(--bg-root); border: 1px solid var(--border);
+            border-radius: 6px; padding: 10px 12px; color: var(--text-main);
+            font-size: 15px; outline: none; transition: 0.2s;
         }
-        input:focus { border-color: var(--accent-fg); box-shadow: 0 0 0 3px rgba(88,166,255,0.15); }
-        .btn-search {
-            background: var(--success-fg); color: white; border: none; border-radius: 8px;
-            padding: 0 20px; font-weight: 600; cursor: pointer; transition: 0.2s;
-        }
-        .btn-search:active { transform: scale(0.96); opacity: 0.9; }
-
-        /* --- 空状态 (初始页面) --- */
-        .empty-state {
-            text-align: center; padding: 20px 0;
-            animation: fadeIn 0.5s ease;
-        }
-        .empty-title { color: var(--text-primary); font-size: 16px; margin-bottom: 20px; font-weight: 500; }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(88,166,255,0.1); }
         
-        .quick-tags { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 30px; }
+        /* --- 首页状态 --- */
+        .dashboard { text-align: center; padding-top: 40px; animation: fadeIn 0.4s; }
+        .logo-area svg { fill: var(--text-main); width: 60px; height: 60px; opacity: 0.8; margin-bottom: 15px; }
+        .hint { color: var(--text-sub); font-size: 14px; margin-bottom: 30px; }
+        
+        .tag-cloud { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
         .tag {
-            background: var(--bg-subtle); border: 1px solid var(--border-default);
-            color: var(--accent-fg); padding: 6px 12px; border-radius: 20px; font-size: 13px;
-            cursor: pointer; text-decoration: none; transition: 0.2s;
+            background: var(--bg-card); border: 1px solid var(--border); color: var(--accent);
+            padding: 5px 12px; border-radius: 100px; font-size: 12px; cursor: pointer;
         }
-        .tag:hover { border-color: var(--accent-fg); background: rgba(88,166,255,0.1); }
 
-        .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; }
-        .feature-item {
-            background: var(--bg-card); padding: 15px; border-radius: 8px; border: 1px solid var(--border-default);
-        }
-        .f-icon { font-size: 20px; margin-bottom: 8px; display: block; }
-        .f-title { font-size: 13px; font-weight: 600; color: var(--text-primary); display: block; margin-bottom: 4px; }
-        .f-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
-
-        /* --- 结果卡片 --- */
-        .profile-card {
-            background: var(--bg-card); border: 1px solid var(--border-default);
-            border-radius: 12px; overflow: hidden; display: none;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        /* 1. 身份区 */
-        .p-header { padding: 24px; text-align: center; border-bottom: 1px solid var(--border-default); position: relative; }
-        .p-avatar { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--bg-canvas); box-shadow: 0 0 0 1px var(--border-default); margin-bottom: 12px; }
-        .p-name { font-size: 22px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
-        .p-login { font-size: 18px; color: var(--text-secondary); font-weight: 300; margin-bottom: 12px; }
-        .p-bio { font-size: 14px; color: var(--text-primary); line-height: 1.6; max-width: 90%; margin: 0 auto; }
+        /* --- 结果面板 --- */
+        .result-panel { display: none; animation: slideUp 0.3s; padding-bottom: 40px; }
         
-        .status-badge {
-            position: absolute; top: 20px; right: 20px;
-            font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 12px;
-            border: 1px solid; letter-spacing: 0.5px;
+        /* 1. 核心身份卡 */
+        .profile-header {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 8px; padding: 20px; text-align: center; position: relative; margin-bottom: 12px;
         }
+        .avatar { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--bg-root); margin-bottom: 10px; }
+        .name { font-size: 20px; font-weight: 700; margin-bottom: 2px; }
+        .login { color: var(--text-sub); font-family: monospace; font-size: 14px; }
+        .badges { margin-top: 10px; display: flex; justify-content: center; gap: 6px; }
+        .badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid; }
+        .b-admin { color: var(--red); border-color: var(--red); }
+        .b-hire { color: var(--green); border-color: var(--green); }
+        .b-type { color: var(--purple); border-color: var(--purple); }
 
-        /* 2. 数据仪表盘 */
-        .p-stats { display: grid; grid-template-columns: repeat(4, 1fr); background: rgba(255,255,255,0.02); }
-        .stat-cell { padding: 15px 5px; text-align: center; border-right: 1px solid var(--border-default); border-bottom: 1px solid var(--border-default); cursor: pointer; transition: 0.2s; }
-        .stat-cell:last-child { border-right: none; }
-        .stat-cell:active { background: rgba(255,255,255,0.05); }
-        .stat-val { display: block; font-size: 18px; font-weight: 600; color: var(--text-primary); }
-        .stat-key { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; margin-top: 4px; }
+        /* 2. 数据矩阵 */
+        .data-matrix {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;
+        }
+        .matrix-item {
+            background: var(--bg-card); border: 1px solid var(--border);
+            padding: 12px; border-radius: 8px;
+        }
+        .m-label { font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px; }
+        .m-value { font-size: 15px; color: var(--text-main); font-weight: 600; word-break: break-all; }
+        .m-value.link { color: var(--accent); text-decoration: none; }
 
-        /* 3. 详细列表 */
-        .p-details { padding: 10px 0; }
-        .detail-item {
-            padding: 10px 20px; display: flex; align-items: center; font-size: 13px; color: var(--text-secondary);
-            border-bottom: 1px solid rgba(48, 54, 61, 0.4);
+        /* 3. 全量数据列表 */
+        .full-list {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+            overflow: hidden;
         }
-        .detail-item:last-child { border-bottom: none; }
-        .d-icon { width: 24px; text-align: center; margin-right: 10px; font-size: 16px; opacity: 0.7; }
-        .d-val { color: var(--text-primary); flex: 1; word-break: break-word; }
-        .d-val a { color: var(--accent-fg); text-decoration: none; }
+        .list-row {
+            display: flex; justify-content: space-between; padding: 12px 15px;
+            border-bottom: 1px solid var(--border); font-size: 13px;
+        }
+        .list-row:last-child { border-bottom: none; }
+        .k { color: var(--text-sub); }
+        .v { color: var(--text-main); text-align: right; max-width: 60%; font-family: monospace; }
 
-        /* 4. 元数据区 */
-        .p-meta {
-            background: #090c10; padding: 15px 20px; font-family: SFMono-Regular, Consolas, monospace;
-            font-size: 11px; color: var(--text-secondary); display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-        }
-        .meta-row span { color: var(--text-primary); }
-
-        /* --- 底部语言栏 --- */
-        .lang-footer {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: rgba(22, 27, 34, 0.9); backdrop-filter: blur(10px);
-            border-top: 1px solid var(--border-default);
-            padding: 15px; text-align: center; z-index: 100;
-        }
-        .lang-select {
-            background: var(--bg-canvas); color: var(--text-primary);
-            border: 1px solid var(--border-default); padding: 6px 12px;
-            border-radius: 6px; font-size: 13px; outline: none;
-        }
-
-        .error-toast {
-            position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
-            background: rgba(248, 81, 73, 0.9); color: white; padding: 10px 20px;
-            border-radius: 20px; font-size: 13px; display: none; z-index: 200;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
+        /* 动画 */
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes slideUp { from{transform:translateY(10px);opacity:0} to{transform:translateY(0);opacity:1} }
+        
+        .loading { text-align: center; color: var(--text-sub); padding: 20px; display: none; }
+        .error-msg { color: var(--red); text-align: center; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="search-area">
+    <!-- 搜索区 -->
+    <div class="search-container" id="searchHeader">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="输入 GitHub ID 自动查询..." autocomplete="off">
+        </div>
+        <p class="error-msg" id="errorMsg">未找到该用户，请检查 ID</p>
+    </div>
+
+    <!-- 状态：加载中 -->
+    <div class="loading" id="loading">正在从 GitHub 获取全量数据...</div>
+
+    <!-- 状态1：仪表盘首页 -->
+    <div class="dashboard" id="dashboard">
         <div class="logo-area">
             <svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-            <div class="logo-title" id="t-title">GitHub Insight</div>
+            <h2>GitHub 全数据透视</h2>
         </div>
-        <div class="input-group">
-            <input type="text" id="input" placeholder="Enter username...">
-            <button class="btn-search" onclick="fetchUser()" id="t-btn">GO</button>
-        </div>
-    </div>
-
-    <div class="error-toast" id="error">User not found / 用户不存在</div>
-
-    <div class="empty-state" id="emptyState">
-        <h3 class="empty-title" id="t-quick">🔥 Quick Access</h3>
-        <div class="quick-tags">
-            <a class="tag" onclick="quickSearch('LiJiaHao-Dev')">My Profile</a>
-            <a class="tag" onclick="quickSearch('torvalds')">Linux Creator</a>
-            <a class="tag" onclick="quickSearch('yyx990803')">VueJS Author</a>
-            <a class="tag" onclick="quickSearch('microsoft')">Microsoft</a>
-        </div>
-
-        <h3 class="empty-title" id="t-features">✨ Features</h3>
-        <div class="features-grid">
-            <div class="feature-item">
-                <span class="f-icon">🕵️‍♂️</span>
-                <span class="f-title" id="t-f1-t">Deep Scan</span>
-                <span class="f-desc" id="t-f1-d">View hidden ID, dates & status.</span>
-            </div>
-            <div class="feature-item">
-                <span class="f-icon">📊</span>
-                <span class="f-title" id="t-f2-t">Data Viz</span>
-                <span class="f-desc" id="t-f2-d">Followers, Gists & Repo stats.</span>
-            </div>
+        <p class="hint">输入 ID 后回车，查看 30+ 项隐藏数据</p>
+        <div class="tag-cloud">
+            <span class="tag" onclick="quick('LiJiaHao-Dev')">我的账号</span>
+            <span class="tag" onclick="quick('torvalds')">Linux 之父</span>
+            <span class="tag" onclick="quick('microsoft')">微软官方</span>
         </div>
     </div>
 
-    <div class="profile-card" id="card">
-        <div class="p-header">
-            <span id="badge-area"></span>
-            <img src="" class="p-avatar" id="avatar">
-            <div class="p-name" id="name"></div>
-            <div class="p-login" id="login"></div>
-            <div class="p-bio" id="bio"></div>
+    <!-- 状态2：结果面板 -->
+    <div class="result-panel" id="result">
+        <!-- 头部 -->
+        <div class="profile-header">
+            <img src="" class="avatar" id="p-avatar">
+            <div class="name" id="p-name"></div>
+            <div class="login" id="p-login"></div>
+            <div class="badges" id="p-badges"></div>
+            <p style="margin-top:10px; font-size:14px; line-height:1.5" id="p-bio"></p>
         </div>
 
-        <div class="p-stats">
-            <div class="stat-cell" onclick="go('repositories')">
-                <span class="stat-val" id="repos">0</span>
-                <span class="stat-key" id="l-repos">Repos</span>
-            </div>
-            <div class="stat-cell" onclick="go('gists')">
-                <span class="stat-val" id="gists">0</span>
-                <span class="stat-key" id="l-gists">Gists</span>
-            </div>
-            <div class="stat-cell" onclick="go('followers')">
-                <span class="stat-val" id="followers">0</span>
-                <span class="stat-key" id="l-fans">Fans</span>
-            </div>
-            <div class="stat-cell" onclick="go('following')">
-                <span class="stat-val" id="following">0</span>
-                <span class="stat-key" id="l-follow">Follow</span>
-            </div>
+        <!-- 关键指标 -->
+        <div class="data-matrix">
+            <div class="matrix-item"><span class="m-label">公开仓库</span><span class="m-value" id="d-repos"></span></div>
+            <div class="matrix-item"><span class="m-label">粉丝 (Followers)</span><span class="m-value" id="d-followers"></span></div>
+            <div class="matrix-item"><span class="m-label">关注 (Following)</span><span class="m-value" id="d-following"></span></div>
+            <div class="matrix-item"><span class="m-label">代码片段 (Gists)</span><span class="m-value" id="d-gists"></span></div>
         </div>
 
-        <div class="p-details">
-            <div class="detail-item" id="row-company">
-                <span class="d-icon">🏢</span> <span class="d-val" id="company"></span>
-            </div>
-            <div class="detail-item" id="row-location">
-                <span class="d-icon">📍</span> <span class="d-val" id="location"></span>
-            </div>
-            <div class="detail-item" id="row-email">
-                <span class="d-icon">📧</span> <span class="d-val" id="email"></span>
-            </div>
-            <div class="detail-item" id="row-blog">
-                <span class="d-icon">🔗</span> <span class="d-val"><a href="#" id="blog" target="_blank"></a></span>
-            </div>
-            <div class="detail-item" id="row-twitter">
-                <span class="d-icon">🐦</span> <span class="d-val" id="twitter"></span>
-            </div>
-            <div class="detail-item">
-                <span class="d-icon">🕒</span> <span class="d-val" id="created_at"></span>
-            </div>
-        </div>
-
-        <div class="p-meta">
-            <div class="meta-row">ID: <span id="uid"></span></div>
-            <div class="meta-row">Type: <span id="type"></span></div>
-            <div class="meta-row" style="grid-column: span 2; color: var(--accent-fg)">
-                Last Active: <span id="updated_at"></span>
-            </div>
+        <!-- 全量详细列表 -->
+        <div class="full-list" id="fullList">
+            <!-- JS 自动填充这里 -->
         </div>
     </div>
-</div>
-
-<div class="lang-footer">
-    <select class="lang-select" onchange="changeLang(this.value)" id="langSelect">
-        <option value="zh">🇨🇳 中文 (Chinese)</option>
-        <option value="en">🇺🇸 English</option>
-    </select>
 </div>
 
 <script>
-    // --- 1. 多语言字典 ---
-    const i18n = {
-        zh: {
-            title: "GitHub 极客透视",
-            placeholder: "输入 GitHub ID...",
-            btn: "查 询",
-            quick: "🔥 热门 / 快捷访问",
-            features: "✨ 功能概览",
-            f1t: "深度扫描", f1d: "查看隐藏的 ID、注册时间与状态。",
-            f2t: "数据可视化", f2d: "一览仓库、粉丝与 Gist 统计。",
-            l_repos: "仓库", l_gists: "代码片段", l_fans: "粉丝", l_follow: "关注",
-            err: "未找到该用户",
-            no_bio: "这位用户很神秘，没有个人简介。",
-            staff: "官方员工", hire: "可雇佣"
-        },
-        en: {
-            title: "GitHub Insight",
-            placeholder: "Enter username...",
-            btn: "SEARCH",
-            quick: "🔥 Quick Access",
-            features: "✨ Features",
-            f1t: "Deep Scan", f1d: "View hidden ID, dates & status.",
-            f2t: "Data Viz", f2d: "Followers, Gists & Repo stats.",
-            l_repos: "REPOS", l_gists: "GISTS", l_fans: "FANS", l_follow: "FOLLOW",
-            err: "User not found",
-            no_bio: "No public bio available.",
-            staff: "STAFF", hire: "HIREABLE"
+    const searchInput = document.getElementById('searchInput');
+    const dashboard = document.getElementById('dashboard');
+    const resultPanel = document.getElementById('result');
+    const loading = document.getElementById('loading');
+    const errorMsg = document.getElementById('errorMsg');
+    const fullList = document.getElementById('fullList');
+
+    // --- 1. 核心逻辑：监听输入变动 (自动归位) ---
+    searchInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        if (val === "") {
+            // 内容被删除，立即归位
+            showDashboard();
         }
-    };
-
-    let curLang = 'zh'; // 默认中文，稳！
-    let currentUrl = "";
-
-    // --- 2. 初始化 ---
-    function init() {
-        // 读取本地存储或默认中文
-        const saved = localStorage.getItem('gh_lang');
-        if(saved) curLang = saved;
-        
-        document.getElementById('langSelect').value = curLang;
-        renderText();
-    }
-
-    // --- 3. 渲染文字 ---
-    function renderText() {
-        const t = i18n[curLang];
-        document.getElementById('t-title').innerText = t.title;
-        document.getElementById('input').placeholder = t.placeholder;
-        document.getElementById('t-btn').innerText = t.btn;
-        document.getElementById('t-quick').innerText = t.quick;
-        document.getElementById('t-features').innerText = t.features;
-        
-        document.getElementById('t-f1-t').innerText = t.f1t;
-        document.getElementById('t-f1-d').innerText = t.f1d;
-        document.getElementById('t-f2-t').innerText = t.f2t;
-        document.getElementById('t-f2-d').innerText = t.f2d;
-        
-        document.getElementById('l-repos').innerText = t.l_repos;
-        document.getElementById('l-gists').innerText = t.l_gists;
-        document.getElementById('l-fans').innerText = t.l_fans;
-        document.getElementById('l-follow').innerText = t.l_follow;
-
-        document.getElementById('error').innerText = t.err;
-    }
-
-    // --- 4. 切换语言 ---
-    function changeLang(val) {
-        curLang = val;
-        localStorage.setItem('gh_lang', val); // 记住选择
-        renderText();
-    }
-
-    // --- 5. 搜索核心 ---
-    function quickSearch(name) {
-        document.getElementById('input').value = name;
-        fetchUser();
-    }
-
-    async function fetchUser() {
-        const name = document.getElementById('input').value.trim();
-        const card = document.getElementById('card');
-        const empty = document.getElementById('emptyState');
-        const err = document.getElementById('error');
-        
-        if(!name) return;
-
-        try {
-            const res = await fetch(`https://api.github.com/users/${name}`);
-            if(!res.ok) throw new Error();
-            const data = await res.json();
-            currentUrl = data.html_url;
-
-            // 填充数据
-            document.getElementById('avatar').src = data.avatar_url;
-            document.getElementById('name').innerText = data.name || data.login;
-            document.getElementById('login').innerText = "@" + data.login;
-            document.getElementById('bio').innerText = data.bio || i18n[curLang].no_bio;
-
-            // 徽章逻辑
-            const badgeArea = document.getElementById('badge-area');
-            badgeArea.innerHTML = "";
-            if(data.site_admin) badgeArea.innerHTML += `<span class="status-badge" style="color:#f85149;border-color:#f85149">${i18n[curLang].staff}</span>`;
-            if(data.hireable) badgeArea.innerHTML += `<span class="status-badge" style="color:#238636;border-color:#238636">${i18n[curLang].hire}</span>`;
-
-            // 核心数据
-            document.getElementById('repos').innerText = formatNum(data.public_repos);
-            document.getElementById('gists').innerText = formatNum(data.public_gists);
-            document.getElementById('followers').innerText = formatNum(data.followers);
-            document.getElementById('following').innerText = formatNum(data.following);
-
-            // 详情列表
-            updateRow('company', data.company);
-            updateRow('location', data.location);
-            updateRow('email', data.email);
-            updateRow('twitter', data.twitter_username ? `@${data.twitter_username}` : null);
-            
-            // 博客链接
-            const blogRow = document.getElementById('row-blog');
-            if(data.blog) {
-                blogRow.style.display = 'flex';
-                let url = data.blog.startsWith('http') ? data.blog : 'http://' + data.blog;
-                const link = document.getElementById('blog');
-                link.href = url;
-                link.innerText = data.blog;
-            } else {
-                blogRow.style.display = 'none';
-            }
-
-            // 元数据
-            document.getElementById('created_at').innerText = "Joined: " + new Date(data.created_at).toLocaleDateString();
-            document.getElementById('uid').innerText = data.id;
-            document.getElementById('type').innerText = data.type;
-            document.getElementById('updated_at').innerText = new Date(data.updated_at).toLocaleString();
-
-            // 视图切换
-            empty.style.display = 'none';
-            card.style.display = 'block';
-            err.style.display = 'none';
-
-        } catch(e) {
-            showError();
-        }
-    }
-
-    function updateRow(id, val) {
-        const row = document.getElementById('row-' + id);
-        if(val) {
-            document.getElementById(id).innerText = val;
-            row.style.display = 'flex';
-        } else {
-            row.style.display = 'none';
-        }
-    }
-
-    function formatNum(num) {
-        return num > 1000 ? (num/1000).toFixed(1) + 'k' : num;
-    }
-
-    function showError() {
-        const err = document.getElementById('error');
-        err.style.display = 'block';
-        setTimeout(() => { err.style.display = 'none'; }, 3000);
-    }
-
-    function go(tab) {
-        if(currentUrl) window.open(`${currentUrl}?tab=${tab}`);
-    }
-
-    // 回车搜索
-    document.getElementById('input').addEventListener('keypress', e => {
-        if(e.key === 'Enter') fetchUser();
     });
 
-    // 启动!
-    init();
+    // 回车搜索
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') executeSearch(searchInput.value.trim());
+    });
+
+    function quick(name) {
+        searchInput.value = name;
+        executeSearch(name);
+    }
+
+    function showDashboard() {
+        resultPanel.style.display = 'none';
+        loading.style.display = 'none';
+        errorMsg.style.display = 'none';
+        dashboard.style.display = 'block';
+    }
+
+    // --- 2. 数据获取与处理 ---
+    async function executeSearch(username) {
+        if (!username) return;
+
+        dashboard.style.display = 'none';
+        resultPanel.style.display = 'none';
+        loading.style.display = 'block';
+        errorMsg.style.display = 'none';
+
+        try {
+            const res = await fetch(`https://api.github.com/users/${username}`);
+            if (!res.ok) throw new Error("404");
+            const data = await res.json();
+            
+            renderData(data);
+            
+            loading.style.display = 'none';
+            resultPanel.style.display = 'block';
+        } catch (e) {
+            loading.style.display = 'none';
+            errorMsg.style.display = 'block';
+        }
+    }
+
+    // --- 3. 渲染全量数据 (中文化) ---
+    function renderData(data) {
+        // 头部信息
+        document.getElementById('p-avatar').src = data.avatar_url;
+        document.getElementById('p-name').innerText = data.name || "未设置昵称";
+        document.getElementById('p-login').innerText = `ID: ${data.id} | @${data.login}`;
+        document.getElementById('p-bio').innerText = data.bio || "该用户暂无个人简介";
+
+        // 徽章
+        const badges = document.getElementById('p-badges');
+        badges.innerHTML = `<span class="badge b-type">${data.type === 'User' ? '个人账号' : '组织账号'}</span>`;
+        if(data.site_admin) badges.innerHTML += `<span class="badge b-admin">GitHub 员工</span>`;
+        if(data.hireable) badges.innerHTML += `<span class="badge b-hire">可雇佣</span>`;
+
+        // 核心指标
+        document.getElementById('d-repos').innerText = data.public_repos;
+        document.getElementById('d-followers').innerText = data.followers;
+        document.getElementById('d-following').innerText = data.following;
+        document.getElementById('d-gists').innerText = data.public_gists;
+
+        // 全量列表生成 (内置汉化映射)
+        const map = [
+            { k: "公司/组织", v: data.company },
+            { k: "地理位置", v: data.location },
+            { k: "电子邮箱", v: data.email },
+            { k: "个人网站", v: data.blog, link: true },
+            { k: "Twitter", v: data.twitter_username },
+            { k: "注册时间", v: formatDate(data.created_at) },
+            { k: "最后更新", v: formatDate(data.updated_at) },
+            { k: "节点 ID", v: data.node_id },
+            { k: "Gravatar ID", v: data.gravatar_id || "无" },
+            { k: "主页链接", v: data.html_url, link: true },
+            { k: "API 链接", v: data.url, link: true }
+        ];
+
+        fullList.innerHTML = map.map(item => {
+            let val = item.v;
+            if (!val) val = "未设置";
+            if (item.link && val !== "未设置") {
+                // 自动补全 http
+                let url = val.startsWith('http') ? val : 'http://' + val;
+                val = `<a href="${url}" target="_blank" style="color:#58a6ff;text-decoration:none">${item.v}</a>`;
+            }
+            return `
+                <div class="list-row">
+                    <span class="k">${item.k}</span>
+                    <span class="v">${val}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function formatDate(isoStr) {
+        if (!isoStr) return "未知";
+        const d = new Date(isoStr);
+        return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 ${d.getHours()}:${d.getMinutes()}`;
+    }
 </script>
+
 </body>
 </html>
