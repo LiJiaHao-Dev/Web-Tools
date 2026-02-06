@@ -1,304 +1,367 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub User Explorer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GitHub Explorer</title>
     <style>
-        /* --- 核心风格：GitHub 暗黑模式 --- */
+        /* --- 1. GitHub 官方字体栈与配色 --- */
         :root {
-            --bg-color: #0d1117;
-            --card-bg: #161b22;
-            --border-color: #30363d;
-            --text-main: #c9d1d9;
-            --text-muted: #8b949e;
-            --accent-green: #238636;
-            --accent-hover: #2ea043;
-            --link-blue: #58a6ff;
+            --bg-canvas: #0d1117;
+            --bg-card: #161b22;
+            --border-default: #30363d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent-fg: #58a6ff;
+            --btn-bg: #238636;
+            --btn-hover: #2ea043;
+            --danger: #f85149;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            /* 核心：GitHub 官方字体栈，在 iOS 上极其优雅 */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
             display: flex;
             justify-content: center;
-            padding-top: 50px;
+            padding: 40px 20px;
             min-height: 100vh;
+            -webkit-font-smoothing: antialiased; /* iOS 字体平滑 */
         }
 
         .container {
             width: 100%;
-            max-width: 480px;
-            padding: 20px;
+            max-width: 400px; /* 限制宽度，模拟移动端卡片 */
         }
 
-        h1 {
-            font-size: 24px;
-            margin-bottom: 24px;
+        /* --- 2. 顶部 Logo --- */
+        .brand {
             text-align: center;
-            font-weight: 300;
+            margin-bottom: 30px;
+        }
+        .github-logo {
+            fill: #c9d1d9;
+            width: 48px;
+            height: 48px;
         }
 
-        /* --- 搜索栏 --- */
-        .search-box {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 30px;
+        /* --- 3. 搜索区域 --- */
+        .search-wrapper {
+            position: relative;
+            margin-bottom: 24px;
         }
 
         input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            width: 100%;
+            background: var(--bg-canvas);
+            border: 1px solid var(--border-default);
             border-radius: 6px;
+            padding: 8px 12px;
+            color: var(--text-primary);
             font-size: 14px;
+            line-height: 20px;
+            transition: 0.2s;
             outline: none;
+            /* 解决 iOS 输入框内阴影 */
+            -webkit-appearance: none;
         }
 
         input:focus {
-            border-color: var(--link-blue);
+            border-color: var(--accent-fg);
             box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
         }
 
         button {
-            padding: 8px 16px;
-            background-color: var(--accent-green);
+            width: 100%;
+            margin-top: 10px;
+            background-color: var(--btn-bg);
             color: white;
             border: 1px solid rgba(240, 246, 252, 0.1);
             border-radius: 6px;
+            padding: 8px 16px;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: 0.2s;
         }
 
-        button:hover {
-            background-color: var(--accent-hover);
-        }
+        button:active { background-color: var(--btn-hover); transform: scale(0.98); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        /* --- 结果展示卡片 --- */
-        .profile-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
+        /* --- 4. 资料卡片 (模仿 GitHub Mobile App) --- */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-default);
             border-radius: 6px;
-            padding: 24px;
+            padding: 20px;
             display: none; /* 默认隐藏 */
+            animation: fadeIn 0.3s ease;
         }
 
-        .header {
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .profile-header {
             display: flex;
-            align-items: flex-start;
-            gap: 20px;
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 20px;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
         }
 
         .avatar {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-default);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.1);
         }
 
-        .info h2 {
-            font-size: 20px;
-            line-height: 1.2;
-        }
-
-        .username {
-            font-size: 16px;
-            color: var(--text-muted);
-            font-weight: 300;
-            margin-bottom: 8px;
-        }
+        .names h2 { font-size: 20px; font-weight: 600; line-height: 1.25; }
+        .names p { color: var(--text-secondary); font-size: 16px; font-weight: 300; }
 
         .bio {
             font-size: 14px;
-            color: var(--text-main);
-            margin-top: 8px;
+            color: var(--text-primary);
+            margin-bottom: 16px;
             line-height: 1.5;
         }
 
-        /* --- 数据统计网格 --- */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .stat-item {
-            text-align: center;
-            background: rgba(255,255,255,0.03);
-            padding: 10px;
-            border-radius: 6px;
-        }
-
-        .stat-value {
-            display: block;
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-main);
-        }
-
-        .stat-label {
+        /* 数据栏 */
+        .stats {
+            display: flex;
+            gap: 16px;
             font-size: 12px;
-            color: var(--text-muted);
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-default);
         }
 
-        /* --- 底部详细信息 --- */
-        .details {
-            font-size: 13px;
-            color: var(--text-muted);
-            display: grid;
-            gap: 8px;
-        }
+        .stat-item { display: flex; align-items: center; gap: 4px; }
+        .stat-item b { color: var(--text-primary); font-weight: 600; font-size: 14px; }
+        .stat-item:hover { color: var(--accent-fg); cursor: pointer; }
 
-        .detail-row span {
-            color: var(--text-main);
-            margin-left: 8px;
-        }
+        /* 详细信息列表 */
+        .details { font-size: 12px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 8px; }
+        .detail-row { display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .icon { width: 16px; text-align: center; }
 
+        /* 底部链接 */
         .footer-link {
             display: block;
             margin-top: 20px;
             text-align: center;
-            color: var(--link-blue);
+            color: var(--accent-fg);
             text-decoration: none;
-            font-size: 14px;
+            font-size: 12px;
+            font-weight: 600;
         }
-        
-        .footer-link:hover {
-            text-decoration: underline;
+        .footer-link:hover { text-decoration: underline; }
+
+        /* 错误提示 */
+        .error {
+            color: var(--danger);
+            text-align: center;
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+            border: 1px solid rgba(248, 81, 73, 0.4);
+            background: rgba(248, 81, 73, 0.1);
+            padding: 8px;
+            border-radius: 6px;
         }
 
-        /* --- 错误提示 --- */
-        .error-msg {
-            color: #f85149;
-            text-align: center;
-            margin-top: 20px;
-            display: none;
-        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>GitHub Explorer</h1>
-    
-    <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Enter username (e.g., LiJiaHao-Dev)" value="LiJiaHao-Dev">
-        <button onclick="fetchUser()">Search</button>
+    <div class="brand">
+        <svg class="github-logo" viewBox="0 0 16 16" version="1.1" aria-hidden="true">
+            <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+        </svg>
     </div>
 
-    <p class="error-msg" id="errorMsg">User not found</p>
+    <div class="search-wrapper">
+        <input type="text" id="searchInput" placeholder="Search GitHub users...">
+        <button id="searchBtn" onclick="fetchUser()">Search</button>
+        <div class="error" id="errorMsg">User not found</div>
+    </div>
 
-    <div class="profile-card" id="profileCard">
-        <div class="header">
-            <img src="" alt="Avatar" class="avatar" id="avatar">
-            <div class="info">
-                <h2 id="name">User Name</h2>
-                <div class="username" id="login">@username</div>
-                <div class="bio" id="bio">This user has no bio.</div>
+    <div class="card" id="profileCard">
+        <div class="profile-header">
+            <img src="" alt="" class="avatar" id="avatar">
+            <div class="names">
+                <h2 id="name">Name</h2>
+                <p id="login">@username</p>
             </div>
         </div>
+        
+        <div class="bio" id="bio"></div>
 
-        <div class="stats-grid">
-            <div class="stat-item">
-                <span class="stat-value" id="repos">0</span>
-                <span class="stat-label">Repos</span>
+        <div class="stats">
+            <div class="stat-item" onclick="openLink('repos')">
+                <b id="repos">0</b> <span data-i18n="repos">Repos</span>
             </div>
-            <div class="stat-item">
-                <span class="stat-value" id="followers">0</span>
-                <span class="stat-label">Followers</span>
+            <div class="stat-item" onclick="openLink('followers')">
+                <b id="followers">0</b> <span data-i18n="followers">Followers</span>
             </div>
-            <div class="stat-item">
-                <span class="stat-value" id="following">0</span>
-                <span class="stat-label">Following</span>
+            <div class="stat-item" onclick="openLink('following')">
+                <b id="following">0</b> <span data-i18n="following">Following</span>
             </div>
         </div>
 
         <div class="details">
-            <div class="detail-row">🆔 ID: <span id="userId"></span></div>
-            <div class="detail-row">📅 Joined: <span id="joined"></span></div>
-            <div class="detail-row">📍 Location: <span id="location">Not set</span></div>
-            <div class="detail-row">🔗 Blog: <span id="blog">Not set</span></div>
+            <div class="detail-row" id="row-company">
+                <span class="icon">🏢</span> <span id="company"></span>
+            </div>
+            <div class="detail-row" id="row-location">
+                <span class="icon">📍</span> <span id="location"></span>
+            </div>
+            <div class="detail-row" id="row-blog">
+                <span class="icon">🔗</span> <a href="#" id="blog" style="color:var(--accent-fg);text-decoration:none;"></a>
+            </div>
+            <div class="detail-row">
+                <span class="icon">🕒</span> <span id="joined"></span>
+            </div>
         </div>
 
-        <a href="#" target="_blank" class="footer-link" id="profileLink">View on GitHub →</a>
+        <a href="#" target="_blank" class="footer-link" id="profileLink" data-i18n="viewProfile">View on GitHub</a>
     </div>
 </div>
 
 <script>
+    // --- 1. 国际化字典 (User Agent Language) ---
+    const i18n = {
+        zh: {
+            title: "GitHub 用户查询",
+            placeholder: "输入用户名 (如 LiJiaHao-Dev)",
+            search: "搜 索",
+            searching: "搜索中...",
+            error: "未找到该用户",
+            repos: "仓库",
+            followers: "粉丝",
+            following: "关注",
+            viewProfile: "前往 GitHub 主页",
+            noBio: "该用户很懒，什么都没写。",
+            joined: "加入时间"
+        },
+        en: {
+            title: "GitHub Explorer",
+            placeholder: "Enter username...",
+            search: "Search",
+            searching: "Searching...",
+            error: "User not found",
+            repos: "Repos",
+            followers: "Followers",
+            following: "Following",
+            viewProfile: "View on GitHub",
+            noBio: "No bio available.",
+            joined: "Joined"
+        }
+    };
+
+    // --- 2. 自动检测语言 ---
+    // 检测 navigator.language (如 "zh-CN" 或 "en-US")
+    const userLang = navigator.language.startsWith('zh') ? 'zh' : 'en';
+    const t = i18n[userLang];
+
+    // 初始化页面文本
+    document.title = t.title;
+    document.getElementById('searchInput').placeholder = t.placeholder;
+    document.getElementById('searchBtn').innerText = t.search;
+    document.getElementById('profileLink').innerText = t.viewProfile;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.innerText = t[el.getAttribute('data-i18n')];
+    });
+
+    let currentUserHtmlUrl = "";
+
     async function fetchUser() {
         const input = document.getElementById('searchInput');
         const username = input.value.trim();
         const card = document.getElementById('profileCard');
         const errorMsg = document.getElementById('errorMsg');
-        
+        const btn = document.getElementById('searchBtn');
+
         if (!username) return;
 
-        // 简单的按钮防抖效果
-        const btn = document.querySelector('button');
-        const originalText = btn.innerText;
-        btn.innerText = '...';
+        // UI 交互反馈
+        btn.innerText = t.searching;
         btn.disabled = true;
+        errorMsg.style.display = 'none';
+        card.style.display = 'none';
 
         try {
             const response = await fetch(`https://api.github.com/users/${username}`);
-            
-            if (!response.ok) {
-                throw new Error('User not found');
-            }
-
+            if (!response.ok) throw new Error('Not found');
             const data = await response.json();
 
-            // 填充数据
+            // 填充核心数据
+            currentUserHtmlUrl = data.html_url;
             document.getElementById('avatar').src = data.avatar_url;
             document.getElementById('name').innerText = data.name || data.login;
             document.getElementById('login').innerText = `@${data.login}`;
-            document.getElementById('bio').innerText = data.bio || "No public bio available.";
+            document.getElementById('bio').innerText = data.bio || t.noBio;
             
+            // 统计数据
             document.getElementById('repos').innerText = data.public_repos;
             document.getElementById('followers').innerText = data.followers;
             document.getElementById('following').innerText = data.following;
-            
-            document.getElementById('userId').innerText = data.id;
-            // 格式化日期：2026-01-01
-            document.getElementById('joined').innerText = new Date(data.created_at).toLocaleDateString();
-            document.getElementById('location').innerText = data.location || "Not set";
-            document.getElementById('blog').innerText = data.blog || "Not set";
-            
-            document.getElementById('profileLink').href = data.html_url;
 
-            // 显示卡片，隐藏错误
+            // 详细信息（如果没有就隐藏整行）
+            updateDetail('company', data.company);
+            updateDetail('location', data.location);
+            
+            // 博客链接处理
+            const blogRow = document.getElementById('row-blog');
+            if (data.blog) {
+                blogRow.style.display = 'flex';
+                let blogUrl = data.blog.startsWith('http') ? data.blog : `http://${data.blog}`;
+                document.getElementById('blog').href = blogUrl;
+                document.getElementById('blog').innerText = data.blog;
+            } else {
+                blogRow.style.display = 'none';
+            }
+
+            // 时间格式化
+            const date = new Date(data.created_at);
+            document.getElementById('joined').innerText = `${t.joined}: ${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()}`;
+
+            document.getElementById('profileLink').href = data.html_url;
             card.style.display = 'block';
-            errorMsg.style.display = 'none';
 
         } catch (err) {
-            card.style.display = 'none';
+            errorMsg.innerText = t.error;
             errorMsg.style.display = 'block';
         } finally {
-            btn.innerText = originalText;
+            btn.innerText = t.search;
             btn.disabled = false;
         }
     }
 
-    // 支持回车键搜索
-    document.getElementById('searchInput').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            fetchUser();
+    function updateDetail(id, value) {
+        const el = document.getElementById(id);
+        const row = document.getElementById(`row-${id}`);
+        if (value) {
+            el.innerText = value;
+            row.style.display = 'flex';
+        } else {
+            row.style.display = 'none';
         }
+    }
+
+    // 小彩蛋：点击统计数字跳转到对应页面
+    function openLink(type) {
+        if (!currentUserHtmlUrl) return;
+        window.open(`${currentUserHtmlUrl}?tab=${type}`, '_blank');
+    }
+
+    // 回车搜索
+    document.getElementById('searchInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') fetchUser();
     });
 </script>
 
