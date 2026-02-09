@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="format-detection" content="telephone=no">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>综合网络工具箱</title>
+    <style>
+        /* 原有样式 */
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        .iframe-wrapper {
+            position: relative;
+            width: 100%;
+            min-height: 600px;
+            max-height: 90vh;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 10px 0;
+        }
+
+        .iframe-container {
+            width: 100%;
+            height: 1500px;
+            border: 0;
+        }
+
+        @media (max-width: 768px) {
+            .iframe-wrapper {
+                min-height: 400px;
+            }
+        }
+
+        h1, h2, h3, h4 { margin: 0.8em 0; }
+        #ipInput { padding: 8px; margin: 10px 0; }
+        button { 
+            padding: 8px 20px; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .green-border-frame {
+            border: 3px solid #28a745 !important;
+            border-radius: 8px;
+            padding: 4px;
+            box-sizing: border-box;
+        }
+
+        /* 延迟测试样式 */
+        .latency-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: rgba(255,255,255,0.95);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .test-btn {
+            background: linear-gradient(45deg, #2a2a72, #009ffd);
+            display: block;
+            width: 200px;
+            margin: 0 auto 2rem;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            padding: 10px;
+        }
+
+        .result-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #2a2a72;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+
+        .good { background: #28a745; }
+        .medium { background: #ffc107; }
+        .bad { background: #dc3545; }
+        .loading {
+            animation: pulse 1.2s infinite;
+            background: #6c757d;
+        }
+
+        /* 新增网络测试样式 */
+        .network-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            margin: 20px 0;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #networkTarget {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        #networkTarget:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        .network-result {
+            margin-top: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: white;
+            margin: 8px 0;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <h1>综合网络工具集</h1>
+    <h3 style="color: red;">本工具可查询 IP数据、网络连通性、DNS泄露检测</h3>
+    <h5>❤️ 目前共有 5 个网络工具 ❤️</h5>
+
+    <!-- 原有功能模块 -->
+    <h2>一、IP地址查询器</h2>
+    <h5>国内IPv4地址</h5>
+    <iframe src="https://myip.ipip.net/" style="height: 50px;"></iframe>
+    <h5>国内IPv6地址(不显示v6就是没有,首次加载慢)</h5>
+    <iframe src="https://test.ipw.cn/" style="height: 80px;"></iframe>
+    <h5>国外IPv4地址</h5>
+    <iframe src="https://ipv4.ping0.cc/geo" style="height: 80px;"></iframe>
+    <h5>国外IPv6地址(不显示v6就是没有)</h5>
+    <iframe src="https://ping0.cc/geo" style="height: 80px;"></iframe>
+
+    <h2>二、常用网站延迟测试</h2>
+    <div class="green-border-frame">
+        <div class="latency-container">
+            <button class="test-btn" onclick="startTest()">开始测试网站访问延迟</button>
+            <div class="result-grid" id="results"></div>
+        </div>
+    </div>
+
+    <h2>三、IP属地&纯净度查询</h2> 
+    <input type="text" id="ipInput" placeholder="输入IP地址" required>
+    <button onclick="ip()">查询</button>
+    <h4>例：8.8.8.8</h4>
+    <h4>
+        注：查询完后，分越低明IP越纯净。本工具仅供参考，结果不一定准确。<br><br>
+        15 以内为极度纯净IP, 显示为深绿色 。<br>
+        15 - 25 为纯净IP, 显示为绿色 。<br>
+        25 - 40 为一般IP, 显示为黄绿色 。<br>
+        40 - 50 为微风险IP, 显示为黄色 。<br>
+        50 - 70 为一般风险IP, 显赫为橙色 。<br>
+        70 以上为极度风险IP显示为红色, 可直接拉黑 。<br>
+    </h4>
+
+    <h2>四、DNS泄露检测</h2>
+    <h4 style="color: red;">推荐使用via浏览器查询，否则可能无法正常检测。</h4>
+    <h4>如无法检测请自行使用</h4>
+    <h4>https://browserleaks.com/dns</h4>
+    <h4>检测，IP地址与所有DNS服务器地址均一致则证明未泄露。</h4>
+    <button onclick="startDetection()">开始检测</button>
+    <div id="dnsResult"></div>
+
+    <!-- 新增网络测试模块 -->
+    <h2>五、网络连通性测试</h2>
+    <h4>说明：用的不是我的服务器测试的延迟，而是你的设备连接 你输入的IP/网站 所耗时间，开始测试后每秒检测一次延迟</h4>
+    <div class="network-container">
+        <div class="input-group">
+            <input type="text" id="networkTarget" placeholder="输入IP或域名 (如：example.com:443)">
+            <button onclick="toggleTest()" id="startBtn">开始测试</button>
+        </div>
+        <div class="network-result" id="networkResults"></div>
+    </div>
+    <br>
+
+    <script>
+        // 原有功能脚本
+        function ip() {
+            const input = document.getElementById('ipInput').value;
+            if (input) {
+                window.location.href = `https://ping0.cc/ip/${encodeURIComponent(input)}`;
+            }
+        }
+
+        // 网站延迟测试
+        const sites = [
+            { name: '百度', url: 'https://www.baidu.com' },
+            { name: '微信', url: 'https://weixin.qq.com' },
+            { name: '网易云', url: 'https://music.163.com' },
+            { name: 'Google', url: 'https://www.google.com' },
+            { name: 'Youtube', url: 'https://www.youtube.com' },
+            { name: 'Github', url: 'https://github.com' },
+            { name: 'Github RAW', url: 'https://raw.githubusercontent.com' },
+            { name: 'Cloudflare', url: 'https://www.cloudflare.com' },
+            { name: 'ChatGPT', url: 'https://chat.openai.com' }
+        ];
+
+        async function testLatency(site) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            
+            try {
+                const start = Date.now();
+                await fetch(site.url, {
+                    mode: 'no-cors',
+                    signal: controller.signal,
+                    cache: 'no-store'
+                });
+                clearTimeout(timeoutId);
+                return Date.now() - start;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function getStatusClass(latency) {
+            if (!latency) return 'bad';
+            if (latency < 300) return 'good';
+            if (latency < 800) return 'medium';
+            return 'bad';
+        }
+
+        async function startTest() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = sites.map(site => `
+                <div class="result-card">
+                    <span>${site.name}</span>
+                    <div class="status-dot loading"></div>
+                </div>
+            `).join('');
+
+            const promises = sites.map(async (site, index) => {
+                const cards = document.getElementsByClassName('result-card');
+                const latency = await testLatency(site);
+                
+                cards[index].innerHTML = `
+                    <span>${site.name}</span>
+                    <div style="display: flex; align-items: center;">
+                        <span>${latency ? latency + 'ms' : '超时'}</span>
+                        <div class="status-dot ${getStatusClass(latency)}"></div>
+                    </div>
+                `;
+            });
+
+            await Promise.allSettled(promises);
+        }
+
+        // DNS泄露检测
+        async function startDetection() {
+            const resultDiv = document.getElementById('dnsResult');
+            resultDiv.innerHTML = '检测中（约需10-20秒）...';
+
+            try {
+                const ipRes = await fetch('https://ipapi.co/json/');
+                const ipData = await ipRes.json();
+                const userGeo = ipData.country_name;
+
+                const results = await performDNSQueries();
+                
+                let leakCount = 0;
+                let resultHTML = `
+                    <p>真实IP地址：${ipData.ip}</p>
+                    <p class="summary">真实IP属地：${userGeo}</p>
+                    <h3>DNS出口检测结果：</h3>
+                    <ul>
+                `;
+
+                results.forEach((res, index) => {
+                    if (!res.success) {
+                        resultHTML += `<li>请求 ${index+1}: 查询失败 - ${res.error}</li>`;
+                        return;
+                    }
+
+                    const dns = res.data;
+                    const [dnsGeo, isp] = dns.geo.split(' - ');
+                    const isLeak = userGeo === dnsGeo;
+                    
+                    if(isLeak) leakCount++;
+                    
+                    resultHTML += `
+                        <li>
+                            请求 ${index+1}: 
+                            <span class="${isLeak ? 'leak' : 'safe'}">${dns.ip}</span>
+                            (${dnsGeo} - ${isp})
+                            ${isLeak ? '✅' : '⚠️'}
+                        </li>
+                    `;
+                });
+
+                resultHTML += `</ul>
+                    <p class="summary">
+                        检测完成：10次查询中
+                        <span class="leak">${leakCount}次</span>属地一致，
+                        <span class="safe">${10-leakCount}次</span> 发现泄露
+                    </p>
+                `;
+
+                resultDiv.innerHTML = resultHTML;
+            } catch (e) {
+                resultDiv.innerHTML = '检测失败：请检查网络连接并禁用广告拦截器';
+            }
+        }
+
+        // 新增网络测试脚本
+        let isTesting = false;
+        let currentTest = null;
+
+        function createTestItem(url) {
+            const item = document.createElement('div');
+            item.className = 'result-item';
+            item.innerHTML = `
+                <div style="display: flex; align-items: center">
+                    <div class="status-dot"></div>
+                    <span>${url}</span>
+                </div>
+                <span class="latency">--</span>
+            `;
+            return item;
+        }
+
+        async function testConnection(target) {
+            return new Promise((resolve) => {
+                const [host, port = 443] = target.split(':');
+                const start = Date.now();
+                const controller = new AbortController();
+                
+                fetch(`https://${host}:${port}`, { 
+                    mode: 'no-cors',
+                    signal: controller.signal 
+                })
+                .then(() => resolve({ latency: Date.now() - start, success: true }))
+                .catch(() => {
+                    const img = new Image();
+                    img.onload = img.onerror = () => resolve({ latency: Date.now() - start, success: true });
+                    img.src = `http://${host}:${port}/?t=${start}`;
+                });
+
+                setTimeout(() => {
+                    controller.abort();
+                    resolve({ latency: null, success: false });
+                }, 5000);
+            });
+        }
+
+        async function toggleTest() {
+            const target = document.getElementById('networkTarget').value.trim();
+            const btn = document.getElementById('startBtn');
+            
+            if (!target) return alert('请输入有效地址');
+            
+            isTesting = !isTesting;
+            btn.textContent = isTesting ? '停止测试' : '开始测试';
+            btn.style.background = isTesting ? '#ff4757' : '#007bff';
+
+            const resultContainer = document.getElementById('networkResults');
+            const testItem = createTestItem(target);
+            resultContainer.prepend(testItem);
+
+            while (isTesting) {
+                try {
+                    const { latency, success } = await testConnection(target);
+                    const statusDot = testItem.querySelector('.status-dot');
+                    const latencyDisplay = testItem.querySelector('.latency');
+
+                    statusDot.className = `status-dot ${success ? 'good' : 'bad'}`;
+                    latencyDisplay.textContent = success ? 
+                        `${latency}ms` : 
+                        '超时';
+                    
+                    testItem.scrollIntoView({ behavior: 'smooth' });
+                } catch (error) {
+                    console.error('测试出错:', error);
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+
+        // 公共函数
+        function generateSubdomain() {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            return Array.from({length:32}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+        }
+
+        async function performDNSQueries() {
+            const requests = [];
+            for(let i=0; i<10; i++) {
+                const subdomain = generateSubdomain();
+                const url = `http://${subdomain}.edns.ip-api.com/json?t=${Date.now()}`;
+                requests.push(fetch(url).then(res => res.json()).then(data => ({
+                    success: true,
+                    data: data.dns,
+                    error: null
+                })).catch(error => ({
+                    success: false,
+                    data: null,
+                    error: error.message
+                })));
+            }
+            return await Promise.all(requests);
+        }
+    </script>
+</body>
+</html>
