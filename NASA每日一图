@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NASA APOD | 宇宙画廊</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入更有质感的字体：Merriweather (标题) 和 Lato (正文) -->
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400&family=Merriweather:ital,wght@0,300;0,700;1,300&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #000000;
+            color: #e5e5e5;
+            font-family: 'Lato', sans-serif;
+            /* 模拟星空噪点背景 */
+            background-image: 
+                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 3px),
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 2px),
+                radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 3px);
+            background-size: 550px 550px, 350px 350px, 250px 250px;
+            background-position: 0 0, 40px 60px, 130px 270px;
+        }
+        
+        h1, h2, .serif {
+            font-family: 'Merriweather', serif;
+        }
+
+        /* 自定义日期选择器样式，使其融入黑色背景 */
+        input[type="date"] {
+            background-color: transparent;
+            color: white;
+            border-bottom: 1px solid #444;
+            font-family: 'Lato', sans-serif;
+            letter-spacing: 1px;
+            border-radius: 0;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        
+        /* 修复iOS上日期选择器样式 */
+        input[type="date"]::-webkit-date-and-time-value {
+            text-align: right; 
+            color: white;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+            opacity: 0.6;
+            margin-left: 10px;
+        }
+
+        .image-container {
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+
+        /* 极简加载动画 */
+        .pulse {
+            animation: pulse-animation 2s infinite;
+        }
+        @keyframes pulse-animation {
+            0% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+            100% { opacity: 0.3; }
+        }
+        
+        /* 移动端文本两端对齐优化 */
+        .text-justify-mobile {
+            text-align: justify;
+            text-justify: inter-ideograph;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-6 md:py-12 px-4 selection:bg-white selection:text-black">
+
+    <main class="w-full max-w-5xl mx-auto">
+        
+        <!-- 顶部导航与控制 -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-gray-800 pb-6 mb-8 md:mb-12 gap-6">
+            <div>
+                <h1 class="text-3xl md:text-5xl font-light italic tracking-wide text-white mb-2">
+                    宇宙 <span class="text-gray-500 not-italic text-2xl">| 画廊</span>
+                </h1>
+                <p class="text-gray-500 text-xs tracking-widest uppercase mt-2">NASA 每日天文一图 (APOD)</p>
+            </div>
+
+            <div class="flex flex-row items-end justify-between w-full md:w-auto gap-4">
+                <div class="flex flex-col items-start md:items-end flex-grow md:flex-grow-0">
+                    <label for="dateInput" class="text-xs text-gray-500 uppercase tracking-wider mb-1">穿越时空</label>
+                    <input type="date" id="dateInput" class="bg-transparent border-b border-gray-600 focus:border-white text-lg outline-none pb-1 w-full md:w-40 text-right">
+                </div>
+                <button onclick="fetchApod()" class="border border-gray-600 hover:border-white hover:bg-white hover:text-black text-white px-6 py-2 text-sm transition-all duration-300 rounded-sm whitespace-nowrap">
+                    探索
+                </button>
+            </div>
+        </header>
+
+        <!-- 错误提示 -->
+        <div id="errorMessage" class="hidden text-red-400 text-center mb-8 border-l-2 border-red-500 pl-4 py-2 bg-red-900/10 text-sm"></div>
+
+        <!-- 加载中 -->
+        <div id="loader" class="hidden text-center py-20">
+            <p class="text-gray-500 tracking-[0.3em] text-sm uppercase pulse">正在建立星际链接...</p>
+        </div>
+
+        <!-- 内容区域 -->
+        <article id="contentArea" class="hidden opacity-0 transition-opacity duration-1000 ease-in-out">
+            
+            <!-- 图片展示 (影院模式) -->
+            <figure class="mb-8 md:mb-12 relative group">
+                <div class="image-container w-full bg-black flex justify-center items-center min-h-[250px] md:min-h-[400px] rounded-sm overflow-hidden">
+                    <img id="apodImage" src="" alt="Space Image" class="w-full h-auto object-contain shadow-2xl hidden max-h-[70vh]" onclick="openFullSize()">
+                    <iframe id="apodVideo" class="w-full aspect-video hidden max-w-4xl mx-auto" src="" frameborder="0" allowfullscreen></iframe>
+                </div>
+                <figcaption class="mt-3 text-center text-gray-500 text-xs uppercase tracking-widest opacity-60 md:opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                    点击图片查看高清原图
+                </figcaption>
+            </figure>
+
+            <!-- 文字内容 (双栏布局) -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 pb-20">
+                <!-- 左侧：标题与元数据 -->
+                <div class="md:col-span-4 space-y-4 md:space-y-6 md:border-l border-gray-800 md:pl-6 border-l-2 md:border-l pl-4 md:border-l-[1px]">
+                    <h2 id="imgTitle" class="text-2xl md:text-3xl text-white leading-tight font-light break-words"></h2>
+                    <div class="text-sm text-gray-400 font-mono space-y-1">
+                        <p id="imgDate" class="text-gray-500"></p>
+                        <p id="imgCopyright" class="text-gray-600"></p>
+                    </div>
+                    <a id="hdLink" href="#" target="_blank" class="inline-block text-xs border-b border-gray-600 pb-1 hover:text-white hover:border-white transition-colors uppercase tracking-widest mt-2 md:mt-4">
+                        下载高清壁纸
+                    </a>
+                </div>
+
+                <!-- 右侧：文章描述 -->
+                <div class="md:col-span-8">
+                    <p id="imgExplanation" class="text-base md:text-lg text-gray-300 leading-relaxed font-light serif text-justify-mobile selection:bg-white selection:text-black"></p>
+                </div>
+            </div>
+
+        </article>
+    </main>
+
+    <script>
+        const API_KEY = 'DEMO_KEY'; 
+        const API_URL = 'https://api.nasa.gov/planetary/apod';
+
+        window.onload = function() {
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('dateInput');
+            dateInput.setAttribute('max', today);
+            
+            // 默认日期
+            dateInput.value = "2000-01-01";
+            fetchApod();
+        };
+
+        async function fetchApod() {
+            const date = document.getElementById('dateInput').value;
+            const loader = document.getElementById('loader');
+            const content = document.getElementById('contentArea');
+            const errorMsg = document.getElementById('errorMessage');
+
+            loader.classList.remove('hidden');
+            content.classList.add('hidden');
+            content.classList.remove('opacity-100'); // 重置淡入动画
+            errorMsg.classList.add('hidden');
+
+            try {
+                const response = await fetch(`${API_URL}?api_key=${API_KEY}&date=${date}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.msg || data.error.message || '获取数据失败，请检查网络或日期。');
+                }
+                
+                // 图片预加载
+                if (data.media_type === 'image') {
+                    const tempImg = new Image();
+                    tempImg.src = data.url;
+                    tempImg.onload = () => {
+                        renderData(data);
+                        loader.classList.add('hidden');
+                    };
+                    tempImg.onerror = () => {
+                        renderData(data); // 即使图片加载失败也显示文字
+                        loader.classList.add('hidden');
+                    };
+                } else {
+                    renderData(data);
+                    loader.classList.add('hidden');
+                }
+
+            } catch (error) {
+                showError(error.message);
+                loader.classList.add('hidden');
+            }
+        }
+
+        function renderData(data) {
+            const content = document.getElementById('contentArea');
+            const imgEl = document.getElementById('apodImage');
+            const videoEl = document.getElementById('apodVideo');
+            const hdLink = document.getElementById('hdLink');
+
+            document.getElementById('imgTitle').innerText = data.title;
+            
+            // 格式化日期显示为中文习惯
+            const dateObj = new Date(data.date);
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            // 使用 zh-CN 格式化日期
+            document.getElementById('imgDate').innerText = dateObj.toLocaleDateString('zh-CN', options);
+            
+            document.getElementById('imgExplanation').innerText = data.explanation;
+            
+            const copyrightText = data.copyright ? `© ${data.copyright}` : '公有领域 (Public Domain)';
+            document.getElementById('imgCopyright').innerText = copyrightText;
+
+            if (data.media_type === 'image') {
+                imgEl.src = data.url;
+                imgEl.classList.remove('hidden');
+                videoEl.classList.add('hidden');
+                imgEl.style.cursor = 'zoom-in';
+                
+                if (data.hdurl) {
+                    hdLink.href = data.hdurl;
+                    hdLink.style.display = 'inline-block';
+                    imgEl.onclick = () => window.open(data.hdurl, '_blank');
+                } else {
+                    hdLink.style.display = 'none';
+                    imgEl.onclick = null;
+                }
+            } else if (data.media_type === 'video') {
+                videoEl.src = data.url;
+                videoEl.classList.remove('hidden');
+                imgEl.classList.add('hidden');
+                hdLink.style.display = 'none';
+            }
+
+            content.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.add('opacity-100');
+            }, 50);
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.innerText = `错误: ${message}`;
+            errorEl.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
