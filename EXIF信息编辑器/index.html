@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EXIF 编辑器 - 专业多文件版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/piexifjs/1.0.6/piexif.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="bg-white px-4 py-3 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+        <div class="flex items-center gap-2">
+            <span class="text-xl">🔙</span>
+            <span class="font-bold text-lg">EXIF 编辑器</span>
+        </div>
+        <div class="text-xs text-pink-500 bg-pink-50 px-3 py-1 rounded-full">剩余 27 次</div>
+    </div>
+    
+    <div id="uploadArea" class="section-card mt-3 p-8 text-center border-2 border-dashed border-pink-200 cursor-pointer bg-pink-50/30 hover:bg-pink-50 transition">
+        <div class="text-4xl text-pink-300 mb-2">+</div>
+        <p class="text-sm text-gray-600 font-bold mb-1">点击上传照片</p>
+        <p class="text-[10px] text-gray-400">请上传 JPG 格式以确保信息写入成功</p>
+    </div>
+
+    <div id="selectedArea" class="section-card mt-3 hidden">
+        <div class="p-4 flex justify-between items-center border-b border-gray-50">
+            <div class="flex items-center gap-2">
+                <span class="text-xl">🖼️</span>
+                <span class="font-bold text-sm">已选择 1 个文件</span>
+            </div>
+            <button id="reselectBtn" class="text-xs text-pink-400 bg-pink-50 px-3 py-1 rounded-full cursor-pointer">重新选择</button>
+        </div>
+        <div class="p-4 bg-gray-50 flex gap-3 overflow-x-auto hide-scrollbar">
+            <div class="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 shrink-0 bg-white">
+                <img id="realThumbnail" class="w-full h-full object-cover">
+            </div>
+        </div>
+    </div>
+    <input type="file" id="fileInput" class="hidden" accept="image/jpeg, image/jpg">
+
+    <div class="section-card">
+        <div class="accordion-header text-pink-500" data-target="devicePanel">
+            <span class="mr-2">📱</span> 设备预设
+        </div>
+        <div class="accordion-content active" id="devicePanel">
+            <div class="flex gap-2 overflow-x-auto hide-scrollbar mb-4 pb-1">
+                <div class="brand-tab active">Apple</div>
+                <div class="brand-tab">vivo</div>
+                <div class="brand-tab">iQOO</div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto hide-scrollbar custom-scroll pb-2" id="deviceGrid"></div>
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="accordion-header" data-target="timePanel">
+            <span class="mr-2 text-pink-400">🕒</span> 时间设置
+        </div>
+        <div class="accordion-content active" id="timePanel">
+            <div class="input-row">
+                <label>拍摄时间</label>
+                <input type="datetime-local" id="editTime">
+            </div>
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="accordion-header" data-target="lensPanel">
+            <span class="mr-2 text-pink-400">◎</span> 镜头与焦距
+        </div>
+        <div class="accordion-content active" id="lensPanel">
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div class="input-row m-0">
+                    <label>设备厂商</label>
+                    <input type="text" id="editMake" value="Apple">
+                </div>
+                <div class="input-row m-0">
+                    <label>设备型号</label>
+                    <input type="text" id="editModel" value="iPhone 17 Pro Max">
+                </div>
+            </div>
+            <div class="input-row">
+                <label>镜头型号 (自动生成)</label>
+                <input type="text" id="editLens" class="text-pink-500 text-xs font-medium" readonly>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="input-row m-0">
+                    <label>焦距 (mm)</label>
+                    <input type="number" id="editFocal" value="6.86" step="0.01">
+                </div>
+                <div class="input-row m-0">
+                    <label>35mm等效焦距</label>
+                    <input type="number" id="editFocal35" value="24">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="accordion-header" data-target="paramsPanel">
+            <span class="mr-2 text-pink-400">TT</span> 拍摄参数
+        </div>
+        <div class="accordion-content active" id="paramsPanel">
+            <div class="grid grid-cols-2 gap-3">
+                <div class="input-row m-0">
+                    <label>光圈 (f/)</label>
+                    <input type="number" id="editAperture" value="1.78" step="0.01">
+                </div>
+                <div class="input-row m-0">
+                    <label>快门速度 (1/)</label>
+                    <input type="number" id="editShutter" value="120">
+                </div>
+                <div class="input-row m-0">
+                    <label>感光度 (ISO)</label>
+                    <input type="number" id="editISO" value="100">
+                </div>
+                <div class="input-row m-0">
+                    <label>曝光补偿</label>
+                    <input type="number" value="0">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="accordion-header" data-target="resPanel">
+            <span class="mr-2 text-pink-400">🔲</span> 分辨率设置
+        </div>
+        <div class="accordion-content active" id="resPanel">
+            <label class="text-xs text-gray-500 mb-2 block">快速选择</label>
+            <div class="grid grid-cols-2 gap-2 mb-3" id="resolutionGrid">
+                <button class="btn-grid active" data-w="4032" data-h="3024">12MP (4032x3024)</button>
+                <button class="btn-grid" data-w="4000" data-h="3000">12MP (4000x3000)</button>
+                <button class="btn-grid" data-w="5712" data-h="4284">24MP (5712x4284)</button>
+                <button class="btn-grid" data-w="8064" data-h="6048">48MP (8064x6048)</button>
+            </div>
+            <div class="input-row m-0">
+                <label>宽度 (px)</label>
+                <input type="number" id="editWidth" value="4032" data-h="3024">
+            </div>
+        </div>
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-md border-t border-gray-100 flex gap-3 items-center z-50">
+        <button id="clearBtn" class="flex flex-col items-center justify-center w-16 text-gray-400 cursor-pointer">
+            <span class="text-xl">🗑️</span>
+            <span class="text-[10px] mt-1">清空</span>
+        </button>
+        <button id="exportBtn" class="flex-1 bg-gradient-to-r from-pink-400 to-rose-400 text-white font-bold py-3.5 rounded-full shadow-lg shadow-pink-200 active:scale-95 transition-transform cursor-pointer">
+            可以导出啦~老婆
+        </button>
+    </div>
+
+    <script src="app.js" defer></script>
+</body>
+</html>
