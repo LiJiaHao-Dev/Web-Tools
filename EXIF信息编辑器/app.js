@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     let base64Image = null;
 
-    // 1. 初始化当前时间
+    // 1. 设置默认时间
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     document.getElementById('editTime').value = now.toISOString().slice(0,16);
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 3. 全系 iPhone 设备库 (从 17 倒序排到 XR)
+    // 3. 渲染机型列表
     const iphones = [
         'iPhone 17 Pro Max', 'iPhone 17 Pro', 'iPhone 17 Plus', 'iPhone 17',
         'iPhone 16 Pro Max', 'iPhone 16 Pro', 'iPhone 16 Plus', 'iPhone 16',
@@ -23,8 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'iPhone 13 Pro Max', 'iPhone 13 Pro', 'iPhone 13', 'iPhone 13 mini',
         'iPhone 12 Pro Max', 'iPhone 12 Pro', 'iPhone 12', 'iPhone 12 mini',
         'iPhone 11 Pro Max', 'iPhone 11 Pro', 'iPhone 11',
-        'iPhone XS Max', 'iPhone XS', 'iPhone XR',
-        'iPhone SE (3rd Gen)', 'iPhone SE (2nd Gen)'
+        'iPhone XS Max', 'iPhone XS', 'iPhone XR'
     ];
 
     const grid = document.getElementById('deviceGrid');
@@ -41,9 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
         grid.appendChild(btn);
     });
 
-    // 4. 图片上传与交互事件
+    // 4. 图片上传与 Canvas 强制格式化 (解决 PNG/截屏核心痛点)
     const fileInput = document.getElementById('fileInput');
-    
     document.getElementById('uploadArea').onclick = () => fileInput.click();
     document.getElementById('reselectBtn').onclick = () => fileInput.click();
     document.getElementById('clearBtn').onclick = () => location.reload();
@@ -51,21 +49,36 @@ document.addEventListener('DOMContentLoaded', () => {
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
-        if (file.type !== 'image/jpeg' && file.type !== 'image/jpg') {
-            alert("由于相册底层协议限制，请必须上传 JPG 格式的照片才能修改信息！");
-            return;
-        }
+        
         const reader = new FileReader();
         reader.onload = function(event) {
-            base64Image = event.target.result;
-            document.getElementById('realThumbnail').src = base64Image;
-            document.getElementById('uploadArea').classList.add('hidden');
-            document.getElementById('selectedArea').classList.remove('hidden');
+            const img = new Image();
+            img.onload = function() {
+                // 绘制 Canvas 进行底层拦截转码
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+
+                // 铺白底，防止透明 PNG 变黑图
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+
+                // 强制转为高画质 JPG
+                base64Image = canvas.toDataURL('image/jpeg', 1.0);
+
+                // UI 更新
+                document.getElementById('realThumbnail').src = base64Image;
+                document.getElementById('uploadArea').classList.add('hidden');
+                document.getElementById('selectedArea').classList.remove('hidden');
+            };
+            img.src = event.target.result;
         };
         reader.readAsDataURL(file);
     });
 
-    // 5. 分辨率按钮联动
+    // 5. 分辨率预设点击联动
     const resButtons = document.querySelectorAll('#resolutionGrid .btn-grid');
     const widthInput = document.getElementById('editWidth');
     resButtons.forEach(btn => {
@@ -77,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     });
 
-    // 6. 镜头描述联动更新
+    // 6. 镜头描述中文字符串生成
     function updateLensString() {
         const model = document.getElementById('editModel').value;
         const focal = document.getElementById('editFocal').value;
@@ -87,9 +100,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('editModel').addEventListener('input', updateLensString);
     document.getElementById('editFocal').addEventListener('input', updateLensString);
     document.getElementById('editAperture').addEventListener('input', updateLensString);
-    updateLensString(); // 初始执行一次
+    updateLensString();
 
-    // 7. 导出处理逻辑
+    // 7. 导出处理逻辑 (包含 iOS 长按弹窗)
     document.getElementById('exportBtn').onclick = () => {
         if (!base64Image) {
             alert("老婆，你还没上传照片呢！");
@@ -124,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const exif = {};
             exif[piexif.ExifIFD.DateTimeOriginal] = formattedDate;
             
+            // 解决中文导致报错的关键步骤
             const utf8Lens = unescape(encodeURIComponent(lensStr));
             exif[piexif.ExifIFD.LensModel] = utf8Lens;
             
@@ -136,16 +150,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const exifObj = {"0th": zeroth, "Exif": exif};
             const exifStr = piexif.dump(exifObj);
+            
+            // 注入数据，生成终极成品图
             const newImage = piexif.insert(exifStr, base64Image);
 
-            const link = document.createElement("a");
-            link.href = newImage;
-            link.download = `IMG_EDITED_${Date.now()}.jpg`;
-            link.click();
+            // ================= 唤起结果弹窗 =================
+            const modal = document.getElementById('resultModal');
+            const finalImg = document.getElementById('finalImage');
+            const androidBtn = document.getElementById('androidDownloadBtn');
+
+            finalImg.src = newImage;
+
+            // 显示弹窗动画
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+
+            // 关闭弹窗
+            document.getElementById('closeModalBtn').onclick = () => {
+                modal.classList.add('opacity-0');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }, 300);
+            };
+
+            // 备用下载通道 (PC / 安卓)
+            androidBtn.onclick = () => {
+                const link = document.createElement("a");
+                link.href = newImage;
+                link.download = `IMG_EDITED_${Date.now()}.jpg`;
+                link.click();
+            };
 
         } catch (e) {
             console.error("导出异常：", e);
-            alert("处理照片时出错了！原因可能是图片格式不支持或者中文字符导致兼容问题。");
+            alert("处理照片时出错了，请稍后重试。");
         }
     };
 });
