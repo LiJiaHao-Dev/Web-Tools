@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EXIF 编辑器 - 专业多文件版</title>
+    <title>EXIF 编辑器 - Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/piexifjs/1.0.6/piexif.min.js"></script>
     <link rel="stylesheet" href="style.css">
@@ -12,7 +12,7 @@
 
     <div class="bg-white px-4 py-3 flex justify-between items-center sticky top-0 z-50 shadow-sm">
         <div class="flex items-center gap-2">
-            <span class="text-xl">🔙</span>
+            <span class="text-xl cursor-pointer">🔙</span>
             <span class="font-bold text-lg">EXIF 编辑器</span>
         </div>
         <div class="text-xs text-pink-500 bg-pink-50 px-3 py-1 rounded-full">剩余 27 次</div>
@@ -20,8 +20,8 @@
     
     <div id="uploadArea" class="section-card mt-3 p-8 text-center border-2 border-dashed border-pink-200 cursor-pointer bg-pink-50/30 hover:bg-pink-50 transition">
         <div class="text-4xl text-pink-300 mb-2">+</div>
-        <p class="text-sm text-gray-600 font-bold mb-1">点击上传照片</p>
-        <p class="text-[10px] text-gray-400">请上传 JPG 格式以确保信息写入成功</p>
+        <p class="text-sm text-gray-600 font-bold mb-1">点击或拖拽上传图片</p>
+        <p class="text-[10px] text-gray-400">支持 JPG / PNG / 手机截屏 等所有格式</p>
     </div>
 
     <div id="selectedArea" class="section-card mt-3 hidden">
@@ -30,15 +30,15 @@
                 <span class="text-xl">🖼️</span>
                 <span class="font-bold text-sm">已选择 1 个文件</span>
             </div>
-            <button id="reselectBtn" class="text-xs text-pink-400 bg-pink-50 px-3 py-1 rounded-full cursor-pointer">重新选择</button>
+            <button id="reselectBtn" class="text-xs text-pink-400 bg-pink-50 px-3 py-1 rounded-full cursor-pointer hover:bg-pink-100 transition">重新选择</button>
         </div>
         <div class="p-4 bg-gray-50 flex gap-3 overflow-x-auto hide-scrollbar">
-            <div class="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 shrink-0 bg-white">
+            <div class="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 shrink-0 bg-white shadow-sm">
                 <img id="realThumbnail" class="w-full h-full object-cover">
             </div>
         </div>
     </div>
-    <input type="file" id="fileInput" class="hidden" accept="image/jpeg, image/jpg">
+    <input type="file" id="fileInput" class="hidden" accept="image/*">
 
     <div class="section-card">
         <div class="accordion-header text-pink-500" data-target="devicePanel">
@@ -49,8 +49,10 @@
                 <div class="brand-tab active">Apple</div>
                 <div class="brand-tab">vivo</div>
                 <div class="brand-tab">iQOO</div>
+                <div class="brand-tab">OPPO</div>
+                <div class="brand-tab">一加</div>
             </div>
-            <div class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto hide-scrollbar custom-scroll pb-2" id="deviceGrid"></div>
+            <div class="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto custom-scroll pb-2" id="deviceGrid"></div>
         </div>
     </div>
 
@@ -59,7 +61,7 @@
             <span class="mr-2 text-pink-400">🕒</span> 时间设置
         </div>
         <div class="accordion-content active" id="timePanel">
-            <div class="input-row">
+            <div class="input-row m-0">
                 <label>拍摄时间</label>
                 <input type="datetime-local" id="editTime">
             </div>
@@ -83,7 +85,7 @@
             </div>
             <div class="input-row">
                 <label>镜头型号 (自动生成)</label>
-                <input type="text" id="editLens" class="text-pink-500 text-xs font-medium" readonly>
+                <input type="text" id="editLens" class="text-pink-500 text-xs font-medium bg-pink-50" readonly>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div class="input-row m-0">
@@ -143,13 +145,33 @@
         </div>
     </div>
 
-    <div class="fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-md border-t border-gray-100 flex gap-3 items-center z-50">
-        <button id="clearBtn" class="flex flex-col items-center justify-center w-16 text-gray-400 cursor-pointer">
+    <div class="fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-md border-t border-gray-100 flex gap-3 items-center z-40">
+        <button id="clearBtn" class="flex flex-col items-center justify-center w-16 text-gray-400 cursor-pointer hover:text-gray-600 transition">
             <span class="text-xl">🗑️</span>
             <span class="text-[10px] mt-1">清空</span>
         </button>
         <button id="exportBtn" class="flex-1 bg-gradient-to-r from-pink-400 to-rose-400 text-white font-bold py-3.5 rounded-full shadow-lg shadow-pink-200 active:scale-95 transition-transform cursor-pointer">
             可以导出啦~老婆
+        </button>
+    </div>
+
+    <div id="resultModal" class="fixed inset-0 bg-black/90 z-[9999] hidden flex-col items-center justify-center p-4 backdrop-blur-sm transition-opacity opacity-0">
+        <div class="w-full max-w-md flex justify-between items-center mb-4 px-2">
+            <span class="text-white font-bold">处理完成 🎉</span>
+            <button id="closeModalBtn" class="text-white/70 hover:text-white bg-white/20 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer">✕</button>
+        </div>
+        
+        <div class="bg-white p-2 rounded-2xl w-full max-w-md shadow-2xl relative">
+            <img id="finalImage" class="w-full rounded-xl object-contain max-h-[60vh] pointer-events-auto">
+        </div>
+        
+        <div class="mt-6 text-center animate-bounce">
+            <p class="text-white font-bold text-lg">👇 苹果用户请长按上方图片 👇</p>
+            <p class="text-pink-300 text-sm mt-1">选择「存储到照片」即可存入相册</p>
+        </div>
+        
+        <button id="androidDownloadBtn" class="mt-8 bg-white/10 text-white/80 border border-white/30 px-6 py-2 rounded-full text-xs cursor-pointer hover:bg-white/20 transition">
+            安卓/PC 备用下载通道
         </button>
     </div>
 
