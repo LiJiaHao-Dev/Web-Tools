@@ -5,29 +5,31 @@
 
 body { 
     background-color: var(--bg-gray); 
-    font-family: -apple-system, sans-serif; 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
     -webkit-tap-highlight-color: transparent; 
     padding-bottom: 90px; 
 }
 
-/* 隐藏部分不需要的滚动条 */
+/* 隐藏无关滚动条 */
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* 机型列表自定义滚动条，为了美观保留细细的滚动提示 */
+/* 内部列表滚动条美化 */
 .custom-scroll::-webkit-scrollbar { width: 4px; }
+.custom-scroll::-webkit-scrollbar-track { background: transparent; }
 .custom-scroll::-webkit-scrollbar-thumb { background: #ffe4e1; border-radius: 4px; }
 
-/* 卡片和面板样式 */
+/* 卡片 */
 .section-card { 
     background: white; 
     border-radius: 12px; 
     margin: 12px; 
     padding: 0; 
     overflow: hidden; 
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02); 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03); 
 }
 
+/* 手风琴折叠菜单 */
 .accordion-header { 
     display: flex; 
     align-items: center; 
@@ -37,12 +39,17 @@ body {
     color: #333; 
     cursor: pointer; 
     border-bottom: 1px solid #f0f0f0; 
+    user-select: none;
+}
+.accordion-content { padding: 12px 16px; display: none; }
+.accordion-content.active { display: block; animation: fadeIn 0.3s ease-out; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.accordion-content { padding: 12px 16px; display: none; }
-.accordion-content.active { display: block; }
-
-/* 输入框样式 */
+/* 输入框 */
 .input-row { display: flex; flex-direction: column; margin-bottom: 12px; }
 .input-row label { font-size: 12px; color: #888; margin-bottom: 4px; }
 .input-row input { 
@@ -53,21 +60,29 @@ body {
     font-size: 14px; 
     outline: none; 
     background: #fafafa; 
-    transition: border 0.2s; 
+    transition: all 0.2s; 
+    color: #333;
 }
-.input-row input:focus { border-color: var(--theme-pink); background: white; }
+.input-row input:focus { 
+    border-color: var(--theme-pink); 
+    background: white; 
+    box-shadow: 0 0 0 2px rgba(255, 182, 193, 0.2); 
+}
 
-/* 按钮样式 */
+/* 预设按钮 */
 .btn-grid { 
     border: 1px solid #eee; 
     border-radius: 20px; 
-    padding: 6px 0; 
+    padding: 8px 4px; 
     font-size: 12px; 
     color: #555; 
     text-align: center; 
     background: white; 
     transition: 0.2s; 
     cursor: pointer; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .btn-grid.active { 
     border-color: var(--theme-pink); 
@@ -76,6 +91,7 @@ body {
     font-weight: bold; 
 }
 
+/* 顶部品牌标签 */
 .brand-tab { 
     white-space: nowrap; 
     padding: 8px 16px; 
@@ -85,4 +101,8 @@ body {
     transition: 0.2s; 
     cursor: pointer; 
 }
-.brand-tab.active { background: #ff4757; color: white; font-weight: bold; }
+.brand-tab.active { 
+    background: #ff4757; 
+    color: white; 
+    font-weight: bold; 
+}
